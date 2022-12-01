@@ -2,6 +2,9 @@ import React, {useState} from 'react';
 import {View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity}  from 'react-native';
 
 export default function Login(){
+  
+  const [type, setType] = useState('login');
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   
@@ -25,12 +28,16 @@ export default function Login(){
             onChangeText={(text)=> setPassword(text)}
         />
 
-        <TouchableOpacity style={styles.btnLogin} onPress={login}>
-            <Text style={styles.logintext}>Acessar</Text>
+        <TouchableOpacity style={[styles.btnLogin, { backgroundColor: type === 'login' ? '#326f' : '#141414'}]} onPress={login}>
+            <Text style={styles.logintext}>
+                { type === 'login' ? 'Acessar' : 'Cadastrar'}
+            </Text>
         </TouchableOpacity>
         
-        <TouchableOpacity >
-            <Text style={{ textAlign: 'center'}}>Criar uma conta</Text>
+        <TouchableOpacity onPress={()=> setType( type => type === 'login' ? 'cadastrar' : 'login')}>
+            <Text style={{ textAlign: 'center'}}>
+              {type === 'login' ? 'Criar uma conta' : 'Já tenho uma conta'}
+            </Text>
         </TouchableOpacity>
 
     </SafeAreaView>
