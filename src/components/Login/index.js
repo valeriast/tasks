@@ -1,15 +1,35 @@
 import React, {useState} from 'react';
 import {View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity}  from 'react-native';
 
-export default function Login(){
+import firebase from '../../services/firebaseConnection'
+
+export default function Login({changeStatus}){
   
   const [type, setType] = useState('login');
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   
-  async function login(){
-    alert('logado')
+  async function handlelogin(){
+    if(type === 'login'){
+      const user = firebase.auth().signInWithEmailAndPassword(email, password)
+      .then((user)=>{
+        changeStatus(user.user.uid);
+      })
+      .catch((error)=>{
+        console.log(error);
+        alert('Algo deu erado no login');
+      })
+    }else{
+      const user = firebase.auth().createUserWithEmailAndPassword(email, password)
+      .then((user)=>{
+        changeStatus(user.user.uid);
+      })
+      .catch((error)=>{
+        console.log(error);
+        alert('Algo deu errado no cadastro');
+      })
+    }
   }
   
 
@@ -28,7 +48,8 @@ export default function Login(){
             onChangeText={(text)=> setPassword(text)}
         />
 
-        <TouchableOpacity style={[styles.btnLogin, { backgroundColor: type === 'login' ? '#326f' : '#141414'}]} onPress={login}>
+        <TouchableOpacity style={[styles.btnLogin, { backgroundColor: type === 'login' ? '#326f' : '#141414'}]} 
+            onPress={handlelogin}>
             <Text style={styles.logintext}>
                 { type === 'login' ? 'Acessar' : 'Cadastrar'}
             </Text>
