@@ -1,18 +1,85 @@
-import React, {useState} from 'react';
-import {View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity, FlatList} from 'react-native';
+import React, {useState, useEffect} from 'react';
+import {View, 
+        Text, 
+        StyleSheet,
+        SafeAreaView, 
+        TextInput, 
+        TouchableOpacity, 
+        FlatList,
+        Keyboard,
+      } from 'react-native';
 
 import Login from './src/components/Login'
 import TasksCard from './src/components/TasksCard';
 
+import firebase from './src/services/firebaseConnection'
+
 export default function App(){
   
-  const [user, setUser] = useState('user');
+  const [user, setUser] = useState('');
   const [newTask, setNewTask] = useState('');
+  const [tasks, setTasks] = useState([]);
+
+  useEffect(()=>{
+    if(user === ''){
+      return;
+    }
+
+    async function buscarTarefas(){
+      setTasks([]);
+      await firebase.database().ref('tarefas').child(user).once('value', (snapshot)=>{
+        snapshot?.forEach((childItem)=>{
+          let data = {
+            key: childItem.key,
+            task: childItem.val().task
+          }
   
-  const tasks = [
-    { key: '1', task: 'Ir no mercado'},
-    { key: '1', task: 'Estudar'},
-   ]
+          setTasks(oldTasks => [...oldTasks, data] )
+        })
+        
+        
+      } )
+
+    }
+
+    buscarTarefas();
+  },[user])
+  
+  function deleteTask(key){
+    console.log(key);
+  }
+
+  function editTask(task){
+    console.log(task);
+  }
+
+  function addNewTask(){
+    if(newTask === ''){
+      return;
+    }
+
+    let tarefas = firebase.database().ref('tarefas').child(user);
+    let chaveTarefa = tarefas.push().key;
+
+    tarefas.child(chaveTarefa).set({
+      task: newTask
+    })
+    .then(()=>{
+      let data = {
+        key: chaveTarefa,
+        task: newTask
+      }
+
+    setTasks( oldTasks => [...oldTasks, data]);
+
+    })
+    .catch((e)=>{
+      console.log(e)
+    })
+
+    setNewTask('');
+    Keyboard.dismiss();
+  }
 
   if (!user){
     return( <Login changeStatus={(user) => setUser(user)}/> );
@@ -28,7 +95,7 @@ export default function App(){
             onChangeText={(value)=>setNewTask(value)}
           />
 
-          <TouchableOpacity style={styles.buttonAdd}>
+          <TouchableOpacity style={styles.buttonAdd} onPress={()=> addNewTask()}>
             <Text style={styles.buttonText}>+</Text>
           </TouchableOpacity>
         </View>
@@ -36,7 +103,7 @@ export default function App(){
         <FlatList
           data={tasks}
           keyExtractor={ item => item.key} 
-          renderItem={({ item }) => ( <TasksCard data={item}/> ) }
+          renderItem={({ item }) => ( <TasksCard data={item} deleteTask={deleteTask} editTask={editTask}/> ) }
         />
     </SafeAreaView>
   )
