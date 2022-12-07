@@ -48,7 +48,7 @@ export default function Login({changeStatus}){
             onChangeText={(text)=> setPassword(text)}
         />
 
-        <TouchableOpacity style={[styles.btnLogin, { backgroundColor: type === 'login' ? '#326f' : '#141414'}]} 
+        <TouchableOpacity style={[styles.btnLogin, { backgroundColor: type === 'login' ? '#9e46d9' : '#141414'}]} 
             onPress={handlelogin}>
             <Text style={styles.logintext}>
                 { type === 'login' ? 'Acessar' : 'Cadastrar'}

@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {View, 
         Text, 
         StyleSheet,
@@ -14,11 +14,16 @@ import TasksCard from './src/components/TasksCard';
 
 import firebase from './src/services/firebaseConnection'
 
+import Feather from 'react-native-vector-icons/Feather'
+
 export default function App(){
   
   const [user, setUser] = useState('');
   const [newTask, setNewTask] = useState('');
   const [tasks, setTasks] = useState([]);
+  const [editTasKey, setEditTaskKey] = useState('');
+  const inputref = useRef(null);
+
 
   useEffect(()=>{
     if(user === ''){
@@ -51,14 +56,46 @@ export default function App(){
       const filteredTasks = tasks.filter(item => item.key !== key);
       setTasks(filteredTasks);
     })
+    setEditTaskKey('');
+    setNewTask('');
+    Keyboard.dismiss();
   }
 
-  function editTask(task){
-    console.log(task);
+  function editTask(editTask){
+    if (editTasKey === editTask.key){
+      setEditTaskKey('');
+      return;
+    }
+    setEditTaskKey(editTask.key);
+    setNewTask(editTask.task);
+    inputref.current.focus();
+  }
+
+  function cancelEdit(){
+    setEditTaskKey('');
+    setNewTask('');
+    Keyboard.dismiss();
   }
 
   function addNewTask(){
     if(newTask === ''){
+      return;
+    }
+
+    if(editTasKey !== ''){
+
+      firebase.database().ref('tarefas').child(user).child(editTasKey).update({
+        task: newTask
+      })
+      .then(()=>{
+        const indexTask = tasks.findIndex( item => item.key === editTasKey);
+        const taskclone = tasks;
+        taskclone[indexTask].task = newTask;
+        setTasks( [...taskclone] );
+      })
+      Keyboard.dismiss();
+      setNewTask('');
+      setEditTaskKey('');
       return;
     }
 
@@ -91,23 +128,46 @@ export default function App(){
 
   return(
     <SafeAreaView style={styles.container}>
+
+      { editTasKey.length > 0 && (
+        <View style={{flexDirection: 'row', marginBottom: 8, alignItems:'center',
+                      backgroundColor: 'red', borderRadius: 4, height: 40,
+                      paddingHorizontal: 10}}>
+          <TouchableOpacity>
+            <Feather
+              name={'x-circle'}
+              size={25}
+              color={'white'}
+              onPress={cancelEdit}
+            />
+          </TouchableOpacity>
+          <Text style={{marginLeft: 8, color: 'white'}}>Voce esta editando uma tarefa!</Text>
+        </View>
+      )}
+
+        
+
         <View style={styles.containerInput}>
           <TextInput
             style={styles.input}
             placeholder='Informe uma tarefa'
             value={newTask}
             onChangeText={(value)=>setNewTask(value)}
+            ref={inputref}
           />
 
           <TouchableOpacity style={styles.buttonAdd} onPress={()=> addNewTask()}>
-            <Text style={styles.buttonText}>+</Text>
+            { editTasKey.length > 0 ? 
+            (<Feather name='edit-2' size={20} color='white'/>) : 
+            (<Text style={styles.buttonText}>+</Text> )}
+            
           </TouchableOpacity>
         </View>
 
         <FlatList
           data={tasks}
           keyExtractor={ item => item.key} 
-          renderItem={({ item }) => ( <TasksCard data={item} deleteTask={deleteTask} editTask={editTask}/> ) }
+          renderItem={({ item }) => ( <TasksCard data={item} deleteTask={deleteTask} editTask={editTask} isselected={editTasKey} /> ) }
         />
     </SafeAreaView>
   )
